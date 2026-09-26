@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+extension/dist/
+web/dist/
+backend/target/
+
+# Environment and secrets
+.env
+**/.env
+.env.local
+**/.env.local
+.env.*.local
+**/.env.*.local
+!**/.env.example
+firebase-service-account.json
+service-account.json
+service-account.*.json
+*-firebase-adminsdk-*.json
+*.credentials.json
+
+# Logs and reports
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+backend/hs_err_pid*
+
+# OS and editor files
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Tool caches
+.vite-temp/
+.cache/
+.turbo/
+.eslintcache
+
+# Java / Maven local files
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Temporary files
+tmp/
+temp/
+*.tmp

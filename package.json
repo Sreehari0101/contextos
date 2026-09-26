@@ -1,0 +1,17 @@
+{
+  "name": "contextos",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ContextOS monorepo for the Google AI Builder Cup prototype.",
+  "workspaces": [
+    "extension"
+  ],
+  "scripts": {
+    "build": "npm --workspace extension run build",
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:test": "npm --prefix backend test",
+    "dev": "npm --workspace extension run dev",
+    "test": "npm --workspace extension run test && npm --prefix backend test",
+    "typecheck": "npm --workspace extension run typecheck"
+  }
+}

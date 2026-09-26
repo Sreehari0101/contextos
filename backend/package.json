@@ -1,0 +1,10 @@
+{
+  "name": "@contextos/backend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "mvn spring-boot:run",
+    "test": "mvn test",
+    "build": "mvn package"
+  }
+}

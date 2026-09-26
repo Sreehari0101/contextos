@@ -1,0 +1,28 @@
+{
+  "name": "@contextos/extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "preview": "vite preview",
+    "test:profile": "esbuild src/services/profileStorage.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-profile-test.mjs && node /tmp/contextos-profile-test.mjs",
+    "test:policy": "esbuild src/utils/contextPolicy.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-policy-test.mjs && node /tmp/contextos-policy-test.mjs",
+    "test": "npm run test:profile && npm run test:policy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.0",
+    "typescript": "^5.9.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "lucide-react": "^0.562.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.39",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "ContextOS",
+  "description": "Explaining only what you need beside real YouTube videos.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "action": {
+    "default_title": "Open ContextOS"
+  },
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": [
+    "sidePanel",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*",
+    "http://localhost:8080/*",
+    "http://127.0.0.1:8080/*",
+    "http://localhost:8090/*",
+    "http://127.0.0.1:8090/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "assets/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

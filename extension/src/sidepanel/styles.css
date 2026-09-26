@@ -1,0 +1,412 @@
+:root {
+  color: #171423;
+  background: #f7f5ff;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+select {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(105, 76, 255, 0.18), transparent 30%),
+    linear-gradient(180deg, #fbfaff 0%, #f5f7fb 54%, #ffffff 100%);
+}
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 4px 14px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: #ffffff;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #c026d3 100%);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.28);
+}
+
+.brand-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.hero p {
+  max-width: 230px;
+  margin: 7px 0 0 44px;
+  color: #625d70;
+  font-size: 13px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 6px 10px;
+  color: #362f60;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(93, 80, 156, 0.18);
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(40, 35, 70, 0.08);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a9a3b8;
+}
+
+.status-dot.active {
+  background: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.13);
+}
+
+section {
+  margin-top: 12px;
+}
+
+.live-card,
+.goal-card,
+.context-preview,
+.why-card,
+.profile-card,
+.repair-card {
+  border: 1px solid rgba(84, 74, 126, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 40px rgba(38, 32, 67, 0.08);
+}
+
+.live-card {
+  padding: 16px;
+}
+
+.goal-card {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 12px 14px;
+  color: #182033;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.goal-card svg {
+  color: #2563eb;
+}
+
+.goal-card select {
+  min-width: 0;
+  width: 100%;
+  color: #111827;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5b4bc4;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.time-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.time-row span:first-child {
+  color: #211a3f;
+  font-size: 32px;
+  font-weight: 850;
+}
+
+.time-row span:last-child {
+  color: #777084;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.live-card h1,
+.context-preview h2,
+.repair-copy h2 {
+  margin: 10px 0 0;
+  color: #181324;
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.summary,
+.context-preview p,
+.repair-copy p {
+  margin: 8px 0 0;
+  color: #5d5868;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.feedback-note {
+  padding: 9px 10px;
+  border: 1px solid #ded7ff;
+  border-radius: 8px;
+  background: #f4f1ff;
+  color: #4f3bb5;
+  font-weight: 700;
+}
+
+.signal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.signal,
+.title-box {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #ece8f7;
+  border-radius: 8px;
+  background: #fbfaff;
+}
+
+.signal span,
+.title-box span {
+  display: block;
+  color: #756f82;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.signal strong,
+.title-box strong {
+  display: block;
+  min-width: 0;
+  margin-top: 6px;
+  overflow: hidden;
+  color: #211a3f;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title-box {
+  margin-top: 10px;
+}
+
+.title-box strong {
+  white-space: normal;
+}
+
+.context-preview,
+.why-card,
+.profile-card,
+.repair-card {
+  padding: 14px;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.button-row button,
+.repair-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 8px 10px;
+  color: #33275f;
+  border: 1px solid rgba(91, 75, 196, 0.2);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(41, 34, 72, 0.06);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.button-row button:hover:not(:disabled),
+.repair-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(91, 75, 196, 0.42);
+}
+
+.button-row button:disabled,
+.repair-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.button-row button.active-action {
+  color: #ffffff;
+  border-color: transparent;
+  background: #5b4bc4;
+  box-shadow: 0 12px 22px rgba(91, 75, 196, 0.2);
+}
+
+.why-card ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #4f4a5d;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.concept-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.concept-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #efedf7;
+  color: #312b41;
+  font-size: 13px;
+}
+
+.concept-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.concept-row strong {
+  padding: 4px 8px;
+  color: #5b4bc4;
+  border-radius: 999px;
+  background: #f0edff;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.repair-card {
+  display: grid;
+  gap: 14px;
+}
+
+.repair-copy {
+  display: flex;
+  gap: 10px;
+}
+
+.repair-copy svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #7c3aed;
+}
+
+.repair-button {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  box-shadow: 0 14px 26px rgba(79, 70, 229, 0.22);
+}
+
+footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 2px 2px;
+  overflow: hidden;
+  color: #777084;
+  font-size: 11px;
+}
+
+footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .hero {
+    flex-direction: column;
+  }
+
+  .hero p {
+    margin-left: 0;
+  }
+
+  .button-row,
+  .signal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

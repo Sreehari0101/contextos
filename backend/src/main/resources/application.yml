@@ -1,0 +1,21 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: contextos-backend
+
+contextos:
+  persistence: ${CONTEXTOS_PERSISTENCE:memory}
+  cors:
+    allowed-origins: ${CONTEXTOS_ALLOWED_ORIGINS:http://localhost:5173,chrome-extension://*}
+  firebase:
+    enabled: ${CONTEXTOS_FIRESTORE_ENABLED:false}
+    project-id: ${GOOGLE_CLOUD_PROJECT:}
+  gemini:
+    enabled: ${CONTEXTOS_GEMINI_ENABLED:false}
+    model: ${CONTEXTOS_GEMINI_MODEL:gemini-3.5-flash-lite}
+
+logging:
+  level:
+    com.contextos: INFO
