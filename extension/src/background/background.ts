@@ -84,6 +84,11 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((message: SidePanelToBackgroundMessage) => {
     if (message.type === "CONTEXTOS_SIDE_PANEL_READY" || message.type === "CONTEXTOS_REQUEST_STATE") {
       sendToPort(port, { type: "CONTEXTOS_STATE_UPDATE", payload: getLatestState() });
+      return;
+    }
+
+    if (message.type === "CONTEXTOS_SEEK" && Number.isFinite(message.seconds) && message.seconds >= 0) {
+      seekMostRecentWatchTab(message.seconds);
     }
   });
 
@@ -101,6 +106,19 @@ function broadcastLatestState(): void {
   for (const port of sidePanelPorts) {
     sendToPort(port, message);
   }
+}
+
+function seekMostRecentWatchTab(seconds: number): void {
+  if (mostRecentWatchTabId === null) {
+    return;
+  }
+
+  chrome.tabs.sendMessage(mostRecentWatchTabId, {
+    type: "CONTEXTOS_SEEK",
+    seconds
+  }).catch(() => {
+    // The content script can be unavailable during navigation or extension reload.
+  });
 }
 
 function getLatestState(): TabWatchState | null {

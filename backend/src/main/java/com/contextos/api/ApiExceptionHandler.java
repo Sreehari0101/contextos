@@ -1,5 +1,6 @@
 package com.contextos.api;
 
+import com.contextos.bridge.BridgeGenerationException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,12 @@ public class ApiExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException error) {
     return ResponseEntity.badRequest().body(Map.of("error", "Invalid request"));
+  }
+
+  @ExceptionHandler(BridgeGenerationException.class)
+  ResponseEntity<Map<String, String>> bridgeFailure(BridgeGenerationException error) {
+    return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+        .body(Map.of("error", "Bridge generation failed"));
   }
 
   @ExceptionHandler(Exception.class)

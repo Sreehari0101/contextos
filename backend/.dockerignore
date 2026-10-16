@@ -1,0 +1,9 @@
+target/
+.env
+.env.*
+!.env.example
+*.log
+*.json
+*-firebase-adminsdk-*.json
+.DS_Store
+.idea/

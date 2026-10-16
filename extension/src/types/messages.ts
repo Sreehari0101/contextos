@@ -21,9 +21,15 @@ export type ContentToBackgroundMessage = {
   payload: YouTubeWatchState;
 };
 
+export type BackgroundToContentMessage = {
+  type: "CONTEXTOS_SEEK";
+  seconds: number;
+};
+
 export type SidePanelToBackgroundMessage =
   | { type: "CONTEXTOS_SIDE_PANEL_READY" }
-  | { type: "CONTEXTOS_REQUEST_STATE" };
+  | { type: "CONTEXTOS_REQUEST_STATE" }
+  | { type: "CONTEXTOS_SEEK"; seconds: number };
 
 export type BackgroundToSidePanelMessage =
   | { type: "CONTEXTOS_STATE_UPDATE"; payload: TabWatchState | null }
@@ -31,5 +37,6 @@ export type BackgroundToSidePanelMessage =
 
 export type RuntimeMessage =
   | ContentToBackgroundMessage
+  | BackgroundToContentMessage
   | SidePanelToBackgroundMessage
   | BackgroundToSidePanelMessage;

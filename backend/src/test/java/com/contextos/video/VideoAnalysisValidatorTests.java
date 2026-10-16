@@ -88,6 +88,48 @@ class VideoAnalysisValidatorTests {
     assertThat(result.analysis().segments()).isEmpty();
   }
 
+  @Test
+  void rejectsMissingVideoId() {
+    VideoAnalysisValidationResult result = validator.validate(new VideoAnalysis(
+        "",
+        "https://youtube.com/watch?v=missing",
+        "Missing id",
+        ContentMode.LEARNING,
+        ContextValue.HIGH,
+        "",
+        ProcessingStatus.READY,
+        Instant.now(),
+        "test",
+        List.of(validSegment("pods", 0, 60))
+    ));
+
+    assertThat(result.valid()).isFalse();
+    assertThat(result.errors()).contains("videoId missing");
+    assertThat(result.analysis().processingStatus()).isEqualTo(ProcessingStatus.FAILED);
+  }
+
+  @Test
+  void rejectsAbsurdSegmentOverlap() {
+    VideoAnalysisValidationResult result = validator.validate(new VideoAnalysis(
+        "overlap",
+        "https://youtube.com/watch?v=overlap",
+        "Overlap",
+        ContentMode.LEARNING,
+        ContextValue.HIGH,
+        "",
+        ProcessingStatus.READY,
+        Instant.now(),
+        "test",
+        List.of(
+            validSegment("pods", 0, 100),
+            validSegment("services", 80, 140)
+        )
+    ));
+
+    assertThat(result.valid()).isFalse();
+    assertThat(result.errors()).contains("segments overlap too much");
+  }
+
   private ConceptSegment validSegment(String id, int start, int end) {
     return new ConceptSegment(
         id,

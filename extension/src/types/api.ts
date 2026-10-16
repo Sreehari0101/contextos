@@ -12,6 +12,7 @@ export type Concept = {
   name: string;
   canonicalName: string;
   description: string;
+  aliases?: string[];
 };
 
 export type ConceptSegment = {
@@ -52,4 +53,33 @@ export type ContextDecision = {
   segment: ConceptSegment | null;
   reasons: string[];
   explanation: string | null;
+};
+
+export type BridgeVariant = "DEFAULT" | "SIMPLER" | "REPAIR";
+export type BridgeGoal = "UNDERSTAND" | "INTERVIEW" | "BUILD";
+
+export type KnownAnchor = {
+  concept: string;
+  state: "FAMILIAR" | "COMFORTABLE";
+};
+
+export type BridgeRequest = {
+  videoId: string;
+  segmentId: string;
+  primaryConcept: string;
+  conceptDescription: string;
+  segmentTitle: string;
+  segmentDescription: string;
+  importance: ConceptSegment["importance"];
+  prerequisites: string[];
+  knownAnchors: KnownAnchor[];
+  variant: BridgeVariant;
+  goal: BridgeGoal;
+};
+
+export type BridgeResponse = {
+  concept: string;
+  explanation: string;
+  personalized: boolean;
+  anchorUsed: string | null;
 };

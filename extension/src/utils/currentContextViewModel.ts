@@ -1,5 +1,5 @@
 import type { ConceptSegment, ContextManifest } from "../types/api";
-import { getConceptKey, type LocalContextProfile, type KnowledgeState } from "../services/profileStorage";
+import { getConceptKey, getConceptKnowledgeFromProfile, type LocalContextProfile, type KnowledgeState } from "../services/profileStorage";
 import { evaluateContextPolicy, type ContextPolicyResult } from "./contextPolicy";
 import { findCurrentSegment } from "./manifest";
 
@@ -35,7 +35,7 @@ export function createCurrentContextViewModel({
 }): CurrentContextViewModel {
   const segment = findCurrentSegment(manifest, timestampSeconds);
   const conceptKey = segment ? getConceptKey(segment) : null;
-  const knowledgeState = conceptKey ? profile?.concepts[conceptKey]?.state ?? "UNKNOWN" : "UNKNOWN";
+  const knowledgeState = segment ? getConceptKnowledgeFromProfile(segment, profile)?.state ?? "UNKNOWN" : "UNKNOWN";
   const policy = evaluateContextPolicy({ manifest, segment, profile });
 
   if (apiStatus === "error" || manifest?.status === "FAILED") {

@@ -1,4 +1,4 @@
-import { getCanonicalName, getConceptKey, type ConceptKnowledge, type KnowledgeState, type LocalContextProfile } from "../services/profileStorage";
+import { getCanonicalName, getConceptKey, getConceptKnowledgeFromProfile, type KnowledgeState, type LocalContextProfile } from "../services/profileStorage";
 import type { Concept, ConceptSegment, ContextManifest } from "../types/api";
 
 export type ConceptDeltaRole = "PRIMARY" | "PREREQUISITE";
@@ -199,8 +199,7 @@ function toConceptDelta(
   profile: LocalContextProfile | null
 ): ConceptDelta {
   const canonicalName = getCanonicalName(concept);
-  const key = getConceptKey(concept);
-  const knowledge = key ? profile?.concepts[key] : undefined;
+  const knowledge = getConceptKnowledgeFromProfile(concept, profile);
   return {
     canonicalName,
     knowledgeState: knowledge?.state ?? "UNKNOWN",

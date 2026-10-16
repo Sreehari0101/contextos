@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test:profile": "esbuild src/services/profileStorage.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-profile-test.mjs && node /tmp/contextos-profile-test.mjs",
     "test:policy": "esbuild src/utils/contextPolicy.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-policy-test.mjs && node /tmp/contextos-policy-test.mjs",
-    "test": "npm run test:profile && npm run test:policy",
+    "test:bridge": "esbuild src/services/bridgeSession.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-bridge-test.mjs && node /tmp/contextos-bridge-test.mjs",
+    "test:repair": "esbuild src/services/contextRepair.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-repair-test.mjs && node /tmp/contextos-repair-test.mjs",
+    "test:why-now": "esbuild src/utils/whyNow.test.ts --bundle --platform=node --format=esm --outfile=/tmp/contextos-why-now-test.mjs && node /tmp/contextos-why-now-test.mjs",
+    "test": "npm run test:profile && npm run test:policy && npm run test:bridge && npm run test:repair && npm run test:why-now",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

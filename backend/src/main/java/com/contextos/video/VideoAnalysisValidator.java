@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class VideoAnalysisValidator {
   private static final int MAX_SEGMENTS = 18;
   private static final int MAX_CONCEPTS_PER_SEGMENT = 5;
+  private static final int MAX_OVERLAP_SECONDS = 5;
 
   public VideoAnalysisValidationResult validate(VideoAnalysis candidate) {
     List<String> errors = new ArrayList<>();
@@ -23,6 +24,10 @@ public class VideoAnalysisValidator {
     ContentMode contentMode = candidate.contentMode() == null ? ContentMode.CONTEXTUAL : candidate.contentMode();
     ContextValue contextValue = candidate.contextValue() == null ? ContextValue.LOW : candidate.contextValue();
     List<ConceptSegment> sourceSegments = candidate.segments() == null ? List.of() : candidate.segments();
+
+    if (isBlank(candidate.videoId())) {
+      errors.add("videoId missing");
+    }
 
     if (candidate.processingStatus() == ProcessingStatus.FAILED) {
       VideoAnalysis failed = new VideoAnalysis(
@@ -85,8 +90,19 @@ public class VideoAnalysisValidator {
       if (segment.concepts().isEmpty()) {
         errors.add("segment has no concepts");
       }
+      if (segment.concepts().stream().anyMatch(concept -> isBlank(concept.canonicalName()))) {
+        errors.add("concept has blank canonicalName");
+      }
       if (!ids.add(segment.id())) {
         errors.add("duplicate segment id: " + segment.id());
+      }
+    }
+
+    for (int index = 1; index < normalized.size(); index++) {
+      ConceptSegment previous = normalized.get(index - 1);
+      ConceptSegment current = normalized.get(index);
+      if (previous.endSeconds() - current.startSeconds() > MAX_OVERLAP_SECONDS) {
+        errors.add("segments overlap too much");
       }
     }
 
@@ -134,7 +150,13 @@ public class VideoAnalysisValidator {
         .map(concept -> new Concept(
             concept.name().trim(),
             firstNonBlank(concept.canonicalName(), concept.name()).trim(),
-            nullToEmpty(concept.description())
+            nullToEmpty(concept.description()),
+            concept.aliases() == null ? List.of() : concept.aliases().stream()
+                .filter(alias -> !isBlank(alias))
+                .map(String::trim)
+                .distinct()
+                .limit(3)
+                .toList()
         ))
         .distinct()
         .limit(MAX_CONCEPTS_PER_SEGMENT)

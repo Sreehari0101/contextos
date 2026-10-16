@@ -1,0 +1,5 @@
+contextos:
+  persistence: memory
+  gemini:
+    enabled: ${CONTEXTOS_GEMINI_ENABLED:false}
+

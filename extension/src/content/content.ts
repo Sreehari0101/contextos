@@ -1,5 +1,5 @@
 import { readWatchState } from "../services/youtube";
-import type { ContentToBackgroundMessage, YouTubeWatchState } from "../types/messages";
+import type { BackgroundToContentMessage, ContentToBackgroundMessage, YouTubeWatchState } from "../types/messages";
 
 let lastSignature = "";
 let intervalId: number | undefined;
@@ -74,6 +74,23 @@ function start(): void {
 
   intervalId = window.setInterval(() => sendState(false), 1000);
 }
+
+chrome.runtime.onMessage.addListener((message: BackgroundToContentMessage) => {
+  if (message?.type !== "CONTEXTOS_SEEK" || !Number.isFinite(message.seconds) || message.seconds < 0) {
+    return;
+  }
+
+  const video = document.querySelector("video");
+  if (!video) {
+    return;
+  }
+
+  video.currentTime = message.seconds;
+  video.play().catch(() => {
+    // Autoplay restrictions can prevent play(), but the seek still succeeds.
+  });
+  window.setTimeout(() => sendState(true), 250);
+});
 
 window.addEventListener("beforeunload", () => {
   if (intervalId !== undefined) {

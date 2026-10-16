@@ -3,7 +3,9 @@ package com.contextos.video;
 import com.contextos.manifest.ContextManifest;
 import com.contextos.manifest.ContextManifestRepository;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ public class VideoService {
   private final VideoAnalyzer analyzer;
   private final VideoIdExtractor videoIdExtractor;
   private final VideoAnalysisValidator validator;
+  private final Map<String, Object> analysisLocks = new ConcurrentHashMap<>();
 
   public VideoService(
       ContextManifestRepository repository,
@@ -33,32 +36,44 @@ public class VideoService {
     String videoId = videoIdExtractor.extract(request.youtubeUrl())
         .orElseThrow(() -> new IllegalArgumentException("Unsupported YouTube URL"));
 
-    Optional<ContextManifest> existing = repository.findByVideoId(videoId);
-    if (existing.isPresent() && isTerminal(existing.get().status())) {
-      ContextManifest cached = existing.get();
-      log.info(
-          "CONTEXT_MANIFEST_CACHE_HIT videoId={} status={} contentMode={} segmentCount={}",
-          videoId,
-          cached.status(),
-          cached.contentMode(),
-          cached.segments().size()
-      );
-      return cached;
-    }
+    Object lock = analysisLocks.computeIfAbsent(videoId, key -> new Object());
+    try {
+      synchronized (lock) {
+        Optional<ContextManifest> existing = repository.findByVideoId(videoId);
+        if (existing.isPresent() && isReusableCache(existing.get().status())) {
+          ContextManifest cached = existing.get();
+          log.info(
+              "CONTEXT_MANIFEST_CACHE_HIT videoId={} status={} contentMode={} segmentCount={}",
+              videoId,
+              cached.status(),
+              cached.contentMode(),
+              cached.segments().size()
+          );
+          return cached;
+        }
 
-    log.info("CONTEXT_MANIFEST_CACHE_MISS videoId={}", videoId);
-    VideoAnalysisValidationResult validation = validator.validate(analyzer.analyze(videoId, request.youtubeUrl(), request.title()));
-    VideoAnalysis analysis = validation.valid() ? validation.analysis() : validation.analysis();
-    if (!validation.valid()) {
-      log.warn("VIDEO_ANALYSIS_VALIDATION_FAILED videoId={} errors={}", videoId, validation.errors());
+        if (existing.isPresent() && existing.get().status() == ProcessingStatus.FAILED) {
+          log.info("CONTEXT_MANIFEST_FAILED_RETRY videoId={}", videoId);
+        } else {
+          log.info("CONTEXT_MANIFEST_CACHE_MISS videoId={}", videoId);
+        }
+
+        VideoAnalysisValidationResult validation = validator.validate(analyzer.analyze(videoId, request.youtubeUrl(), request.title()));
+        VideoAnalysis analysis = validation.analysis();
+        if (!validation.valid()) {
+          log.warn("VIDEO_ANALYSIS_VALIDATION_FAILED videoId={} errors={}", videoId, validation.errors());
+        }
+        ContextManifest manifest = ContextManifest.fromAnalysis(analysis);
+        repository.save(manifest);
+        log.info("CONTEXT_MANIFEST_SAVED videoId={} status={} segmentCount={}", videoId, manifest.status(), manifest.segments().size());
+        if (manifest.status() == ProcessingStatus.NO_CONTEXT_REQUIRED) {
+          log.info("VIDEO_CLASSIFIED_PASSIVE videoId={} contentMode={} contextValue={}", videoId, analysis.contentMode(), analysis.contextValue());
+        }
+        return manifest;
+      }
+    } finally {
+      analysisLocks.remove(videoId, lock);
     }
-    ContextManifest manifest = ContextManifest.fromAnalysis(analysis);
-    repository.save(manifest);
-    log.info("CONTEXT_MANIFEST_SAVED videoId={} status={} segmentCount={}", videoId, manifest.status(), manifest.segments().size());
-    if (manifest.status() == ProcessingStatus.NO_CONTEXT_REQUIRED) {
-      log.info("VIDEO_CLASSIFIED_PASSIVE videoId={} contentMode={} contextValue={}", videoId, analysis.contentMode(), analysis.contextValue());
-    }
-    return manifest;
   }
 
   public Optional<ContextManifest> find(String videoId) {
@@ -77,9 +92,8 @@ public class VideoService {
     return repository.findByVideoId(videoId);
   }
 
-  private boolean isTerminal(ProcessingStatus status) {
+  private boolean isReusableCache(ProcessingStatus status) {
     return status == ProcessingStatus.READY
-        || status == ProcessingStatus.NO_CONTEXT_REQUIRED
-        || status == ProcessingStatus.FAILED;
+        || status == ProcessingStatus.NO_CONTEXT_REQUIRED;
   }
 }

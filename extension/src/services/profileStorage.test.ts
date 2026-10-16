@@ -4,7 +4,8 @@ import {
   getConceptKnowledge,
   getProfile,
   markConceptKnown,
-  type LocalContextProfile
+  normalizeConceptName,
+  resolveConceptIdentity
 } from "./profileStorage";
 import type { ConceptSegment } from "../types/api";
 
@@ -14,6 +15,11 @@ async function run() {
   await testMarkConceptKnown();
   await testRepeatedMarkConceptKnown();
   await testCrossVideoSameConcept();
+  await testAliasConnectsKubernetesPodAcrossVideos();
+  await testAliasConnectsJvmAcrossVideos();
+  await testAliasConnectsRestApiAcrossVideos();
+  await testFalseMergeDoesNotConnectKafkaConsumerGroup();
+  await testLegacyProfileMigratesToSchemaV2();
   await testCorruptedProfileFallback();
   await testMalformedConceptEntryFallback();
   console.log("profileStorage tests passed");
@@ -23,7 +29,7 @@ async function testDefaultProfileCreation() {
   const storage = createMemoryStorage();
   const profile = await getProfile(storage);
 
-  equal(profile.schemaVersion, 1);
+  equal(profile.schemaVersion, 2);
   equal(profile.goal, "UNDERSTAND");
   deepEqual(profile.concepts, {});
 }
@@ -32,6 +38,7 @@ function testConceptKeyNormalization() {
   equal(getConceptKey("Kubernetes Pod"), "kubernetes pod");
   equal(getConceptKey("  kubernetes   pod  "), "kubernetes pod");
   equal(getConceptKey("Kubernetes Pods"), "kubernetes pod");
+  equal(normalizeConceptName("RESTful---APIs!!!"), "restful api");
 }
 
 async function testMarkConceptKnown() {
@@ -70,17 +77,80 @@ async function testCrossVideoSameConcept() {
   equal(knowledge?.evidenceCount, 1);
 }
 
+async function testAliasConnectsKubernetesPodAcrossVideos() {
+  const storage = createMemoryStorage();
+  await markConceptKnown(concept("Kubernetes Pod", "Pod lifecycle", ["K8s Pod", "Pod"]), storage, 1000);
+
+  const profile = await getProfile(storage);
+  const identity = resolveConceptIdentity(concept("K8s Pod", "K8s pod crash loop", ["Kubernetes Pod"]), profile);
+  const knowledge = await getConceptKnowledge(concept("K8s Pod", "K8s pod crash loop", ["Kubernetes Pod"]), storage);
+
+  equal(identity.key, "kubernetes pod");
+  equal(knowledge?.state, "COMFORTABLE");
+}
+
+async function testAliasConnectsJvmAcrossVideos() {
+  const storage = createMemoryStorage();
+  await markConceptKnown(concept("Java Virtual Machine", "JVM internals", ["JVM"]), storage, 1000);
+
+  const knowledge = await getConceptKnowledge("JVM", storage);
+
+  equal(knowledge?.canonicalName, "Java Virtual Machine");
+}
+
+async function testAliasConnectsRestApiAcrossVideos() {
+  const storage = createMemoryStorage();
+  await markConceptKnown(concept("REST API", "REST endpoints", ["RESTful API"]), storage, 1000);
+
+  const knowledge = await getConceptKnowledge("RESTful API", storage);
+
+  equal(knowledge?.state, "COMFORTABLE");
+}
+
+async function testFalseMergeDoesNotConnectKafkaConsumerGroup() {
+  const storage = createMemoryStorage();
+  await markConceptKnown(concept("Kafka", "Kafka broker"), storage, 1000);
+
+  const knowledge = await getConceptKnowledge("Kafka Consumer Group", storage);
+
+  equal(knowledge, null);
+}
+
+async function testLegacyProfileMigratesToSchemaV2() {
+  const storage = createMemoryStorage({
+    schemaVersion: 1,
+    goal: "BUILD",
+    concepts: {
+      JVM: {
+        canonicalName: "Java Virtual Machine",
+        aliases: ["JVM"],
+        state: "COMFORTABLE",
+        confidence: 0.8,
+        lastSeenAt: 100,
+        evidenceCount: 2,
+        source: "USER_EXPLICIT"
+      }
+    }
+  });
+  const profile = await getProfile(storage);
+
+  equal(profile.schemaVersion, 2);
+  equal(profile.goal, "BUILD");
+  equal(profile.concepts.jvm.canonicalName, "Java Virtual Machine");
+  equal(profile.concepts.jvm.aliases?.[0], "JVM");
+}
+
 async function testCorruptedProfileFallback() {
   const storage = createMemoryStorage("not a profile");
   const profile = await getProfile(storage);
 
-  equal(profile.schemaVersion, 1);
+  equal(profile.schemaVersion, 2);
   equal(profile.goal, "UNDERSTAND");
   deepEqual(profile.concepts, {});
 }
 
 async function testMalformedConceptEntryFallback() {
-  const malformedProfile: LocalContextProfile = {
+  const malformedProfile = {
     schemaVersion: 1,
     goal: "UNDERSTAND",
     concepts: {
@@ -104,7 +174,7 @@ async function testMalformedConceptEntryFallback() {
   equal(knowledge.evidenceCount, 0);
 }
 
-function concept(canonicalName: string, title = canonicalName): ConceptSegment {
+function concept(canonicalName: string, title = canonicalName, aliases: string[] = []): ConceptSegment {
   return {
     id: title.toLowerCase().replaceAll(" ", "-"),
     title,
@@ -118,7 +188,8 @@ function concept(canonicalName: string, title = canonicalName): ConceptSegment {
       {
         name: title,
         canonicalName,
-        description: "Canonical concept."
+        description: "Canonical concept.",
+        aliases
       }
     ],
     prerequisites: [],

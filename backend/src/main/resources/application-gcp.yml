@@ -1,0 +1,5 @@
+contextos:
+  persistence: ${CONTEXTOS_PERSISTENCE:firestore}
+  gemini:
+    enabled: ${CONTEXTOS_GEMINI_ENABLED:true}
+

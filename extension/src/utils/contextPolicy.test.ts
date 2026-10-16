@@ -246,7 +246,7 @@ function segment(overrides: Partial<ConceptSegment> = {}): ConceptSegment {
 
 function profile(concepts: LocalContextProfile["concepts"] = {}): LocalContextProfile {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     goal: "UNDERSTAND",
     concepts
   };

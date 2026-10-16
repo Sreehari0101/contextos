@@ -1,108 +1,101 @@
 # ContextOS
 
-ContextOS is a personal context layer for YouTube learning.
+ContextOS is a small personal context layer beside YouTube. It watches the current video timestamp, maps it to a cached Context Manifest, compares the current concept with a local learner profile, and stays quiet unless a short explanation is likely useful.
 
-It watches the current YouTube timestamp, maps it to a generated Context Manifest, compares that concept against the learner's local knowledge profile, and only explains what the learner probably needs right now.
+It is not a chatbot, notes app, transcript viewer, quiz tool, or course platform. The V1 principle is: minimum missing context, at the moment it is needed.
 
-![ContextOS timeline view](docs/screenshots/timeline.png)
+## What It Solves
 
-## Why This Exists
+Long educational or contextual videos often assume background knowledge. ContextOS helps a viewer recover just enough prerequisite context without leaving the video or sending their personal learning profile to the cloud.
 
-Long videos often assume background knowledge. ContextOS adds a lightweight learning layer beside YouTube:
+## Project Status
 
-- detects the current YouTube video and timestamp
-- generates a semantic timeline of concepts
-- stores reusable video context manifests
-- keeps a local learner profile in the browser
-- decides locally whether to show or stay quiet
-- lets each developer bring their own Gemini and Firebase credentials
+This is an open-source prototype. Automated tests and local builds have passed; a full live-video evaluation, Docker runtime validation, and Cloud Run/Firestore deployment validation remain incomplete. See [evaluation results](docs/evaluation/evaluation-results.md) and [known limitations](docs/evaluation/known-limitations.md). Mock mode returns a fixed Kubernetes fixture for every video; it is for development, not evidence of video understanding.
 
-## Current Status
+## V1 Features
 
-This is a hackathon prototype, built as a monorepo.
-
-Working today:
-
-- Chrome Manifest V3 extension
-- native Chrome side panel
-- YouTube watch-page detection, SPA navigation detection, timestamp tracking
+- Chrome Manifest V3 extension with native side panel
+- YouTube watch-page detection, SPA navigation handling, and timestamp tracking
 - Spring Boot backend
-- mock analyzer for zero-secret local development
-- optional Gemini analyzer
-- optional Firestore manifest persistence
-- extension-side Knowledge Delta and Context Policy Engine
-- local profile memory with "I know this"
+- Gemini video analysis for sparse Context Manifests
+- Relevance modes: `LEARNING`, `CONTEXTUAL`, `PASSIVE`
+- Analyze-once manifest caching with memory or Firestore persistence
+- Local Knowledge Profile in `chrome.storage.local`
+- Knowledge states: `UNKNOWN`, `LEARNING`, `FAMILIAR`, `COMFORTABLE`
+- Deterministic local Context Policy: `SHOW` or `SILENT`
+- Personalized bridge explanations, Simpler, Goal Lens, Why Now
+- Context Repair: “I’m lost”, local prerequisite diagnosis, repair explanation, and jump to earlier timestamp
+- Conservative cross-video concept identity through canonical names and aliases
+- Mock mode for contributors without Gemini access
 
-Not done yet:
+## Architecture
 
-- Firebase Auth
-- shared account login
-- Chrome Web Store packaging
-- production deployment scripts
-- full "I'm lost" context repair flow
+```text
+Chrome Extension
+  content script: YouTube URL/video/timestamp signal
+  side panel: local policy, profile, repair diagnosis
+  chrome.storage.local: personal knowledge profile and goal
 
-## Screenshots
+Spring Boot Backend
+  /api/v1/videos/analyze: create or load shared Context Manifest
+  /api/v1/videos/{videoId}: read cached manifest
+  /api/v1/context/bridge: small personalized explanation calls
+  /api/v1/health: container health
 
-Timeline and policy-driven context:
+Gemini
+  video analysis for new videos
+  small bridge/simpler/repair text calls
 
-![Timeline screenshot](docs/screenshots/timeline.png)
+Persistence
+  local mode: memory
+  GCP mode: Firestore collection context_manifests/{videoId}
+```
 
-Knowledge profile concept graph mockup:
+Personal knowledge remains local in the browser. Cloud persistence stores shared video manifests keyed by public YouTube video ID, not user profiles.
 
-![Knowledge screenshot](docs/screenshots/knowledge.png)
+## Requirements
 
-Context repair direction:
-
-![Context repair screenshot](docs/screenshots/context-repair.png)
-
-## Tech Stack
-
-- Extension: Chrome MV3, React, TypeScript, Vite
-- Backend: Java 21, Spring Boot, Maven
-- AI: Gemini Developer API, optional
-- Persistence: in-memory by default, Firestore optional
-- Browser storage: `chrome.storage.local` for local learner profile
-- Tests: TypeScript policy/profile tests, JUnit backend tests
+- Node.js 22.12+ (or a compatible newer LTS)
+- npm
+- Java 21+
+- Maven
+- Chrome
+- Optional: Docker
+- Optional for AI mode: Gemini Developer API key
+- Optional for GCP mode: Google Cloud project with Firestore
 
 ## Repository Structure
 
 ```text
 contextos/
-  backend/           Spring Boot API, Gemini analyzer, Firestore repository
-  extension/         Chrome extension side panel, content script, policy engine
-  docs/              Architecture notes, API notes, screenshots
-  web/               Future onboarding/settings web app placeholder
+  backend/      Spring Boot API, Gemini analyzer, Firestore repository, Dockerfile
+  extension/    Chrome MV3 extension, React side panel, local policy/runtime
+  deploy/       Cloud Run helper script
+  docs/         Architecture/evaluation notes and screenshots
 ```
 
-## Quick Start
-
-Requirements:
-
-- Node.js 20+
-- npm
-- Java 21+
-- Maven
-- Chrome
-
-Clone and install:
+## Local Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/contextos.git
+git clone https://github.com/Sreehari0101/contextos.git
 cd contextos
-npm install
+npm ci
+cp backend/.env.example backend/.env
+cp extension/.env.example extension/.env
 ```
 
-Build the extension:
-
-```bash
-npm run build
-```
-
-Run the backend in mock mode:
+Mock mode works without Gemini or Firestore:
 
 ```bash
 cd backend
-mvn spring-boot:run
+SPRING_PROFILES_ACTIVE=local CONTEXTOS_GEMINI_ENABLED=false mvn spring-boot:run
+```
+
+In another terminal:
+
+```bash
+cd contextos
+npm run build
 ```
 
 Load the extension:
@@ -114,66 +107,161 @@ Load the extension:
 5. Open a YouTube watch page
 6. Open the ContextOS side panel from the extension icon
 
-Mock mode works without Gemini or Firebase credentials.
+## Gemini API Setup
 
-## Environment Setup
-
-Backend env file:
+Create a Gemini API key in Google AI Studio and provide it only to the backend. Run the following from `backend/`. Maven does not automatically load `.env`: either export variables as below, or edit your trusted local `.env` and run `set -a; source .env; set +a` first. Never source a file from an untrusted contributor.
 
 ```bash
-cp backend/.env.example backend/.env
+export GOOGLE_API_KEY="your_key_here"
+export CONTEXTOS_GEMINI_ENABLED=true
+export CONTEXTOS_GEMINI_MODEL=gemini-3.5-flash-lite
+mvn spring-boot:run
 ```
 
-Extension env file:
+Never put a Gemini key in `extension/.env`; Vite environment values are bundled into extension output.
 
-```bash
-cp extension/.env.example extension/.env
+## Environment Variables
+
+Backend:
+
+```text
+SPRING_PROFILES_ACTIVE
+PORT
+GOOGLE_API_KEY
+CONTEXTOS_GEMINI_ENABLED
+CONTEXTOS_GEMINI_MODEL
+CONTEXTOS_PERSISTENCE
+CONTEXTOS_ALLOWED_ORIGINS
+GOOGLE_CLOUD_PROJECT
+GOOGLE_APPLICATION_CREDENTIALS
 ```
 
-The real `.env` files are ignored by git. Do not commit keys.
+Extension:
 
-## Gemini Setup
+```text
+VITE_CONTEXTOS_API_BASE_URL
+```
 
-For real AI analysis, create a Gemini API key in Google AI Studio and update `backend/.env`:
+## Local Mode
+
+Local mode is for contributors and self-hosting on a laptop:
 
 ```bash
-GOOGLE_API_KEY=your_google_ai_studio_key
+SPRING_PROFILES_ACTIVE=local
+CONTEXTOS_PERSISTENCE=memory
+CONTEXTOS_GEMINI_ENABLED=false
+```
+
+Enable Gemini locally by setting `GOOGLE_API_KEY` and `CONTEXTOS_GEMINI_ENABLED=true`.
+
+## GCP Mode
+
+GCP mode is intended for a small Cloud Run hackathon demo:
+
+```bash
+SPRING_PROFILES_ACTIVE=gcp
+CONTEXTOS_PERSISTENCE=firestore
 CONTEXTOS_GEMINI_ENABLED=true
-CONTEXTOS_GEMINI_MODEL=gemini-3.5-flash-lite
+GOOGLE_CLOUD_PROJECT=your_project_id
 ```
 
-Restart the backend after changing env values.
+Use Cloud Run’s service account for Firestore via Application Default Credentials. Do not package or commit a service-account JSON file.
 
 ## Firestore Setup
 
-Firestore is optional. The backend uses in-memory storage by default.
+Create or select a Google Cloud/Firebase project, enable Firestore, and let the Cloud Run service account read/write Firestore. The backend uses:
 
-To use Firestore, create a Firebase or Google Cloud project, enable Firestore, create a service account JSON key, then update `backend/.env`:
-
-```bash
-CONTEXTOS_PERSISTENCE=firestore
-GOOGLE_CLOUD_PROJECT=your_project_id
-GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/service-account.json
+```text
+context_manifests/{videoId}
 ```
 
-Recommended local key location:
+For local Firestore testing only, set:
 
 ```bash
-mkdir -p ~/.config/contextos
-mv ~/Downloads/your-service-account.json ~/.config/contextos/firebase-service-account.json
+export CONTEXTOS_PERSISTENCE=firestore
+export GOOGLE_CLOUD_PROJECT=your_project_id
+export GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/service-account.json
 ```
 
-Then use:
+Keep service-account files outside the repo, for example `~/.config/contextos/firebase-service-account.json`.
+
+## Cloud Run Deployment
+
+Prepare a Secret Manager secret containing the Gemini API key, then review and run:
 
 ```bash
-GOOGLE_APPLICATION_CREDENTIALS=/Users/YOUR_MAC_USERNAME/.config/contextos/firebase-service-account.json
+PROJECT_ID=your_project_id \
+REGION=us-central1 \
+SERVICE_NAME=contextos-backend \
+GEMINI_SECRET_NAME=contextos-gemini-api-key \
+CONTEXTOS_ALLOWED_ORIGINS=chrome-extension://your_extension_id \
+bash deploy/cloud-run.sh
 ```
 
-Never commit the service account JSON file.
+The script uses min instances `0` and max instances `2`. This does not cap spending. It deploys an unauthenticated API; CORS is not authentication and does not prevent direct API calls. Keep deployments controlled, monitor quota/billing, and do not advertise a shared public Gemini-backed endpoint as abuse-protected.
 
-## Useful Commands
+Set the Cloud Run runtime service account's Firestore access and Secret Manager secret access before deploying. The script assumes these permissions and the secret already exist. For a deployed extension, also add the exact backend origin followed by `/*` to `extension/public/manifest.json` under `host_permissions`, then rebuild; currently only local backend origins are included.
+
+After deployment, build the extension with:
+
+```bash
+VITE_CONTEXTOS_API_BASE_URL=https://your-cloud-run-url npm run build
+```
+
+## Docker
+
+Build the backend image:
+
+```bash
+docker build -t contextos-backend ./backend
+```
+
+Run locally:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e PORT=8080 \
+  -e SPRING_PROFILES_ACTIVE=local \
+  -e CONTEXTOS_GEMINI_ENABLED=false \
+  contextos-backend
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:8080/api/v1/health
+```
+
+The health endpoint confirms the backend is alive. It does not call Gemini.
+
+## Privacy Model
+
+- Personal profile stays in `chrome.storage.local`.
+- Stored personal data includes known concepts, aliases, confidence/state, goal, and local interaction state.
+- Shared backend storage contains public video manifests keyed by YouTube video ID.
+- Bridge requests send only the current concept, prerequisites, goal, and a small list of known anchors needed for the explanation.
+- No Firebase Auth or cloud user profile exists in V1.
+
+## Cost-Conscious Design
+
+- New video analysis can call Gemini once, then reuses the cached manifest.
+- Timestamp matching, Knowledge Delta, Context Policy, Why Now, I know this, and repair diagnosis run locally.
+- Bridge/Simpler/Repair use smaller text payloads and are cached in the extension session.
+- PASSIVE content stays silent and does not request bridge explanations.
+
+## Tests
 
 From the repo root:
+
+```bash
+npm --workspace extension run test
+npm run typecheck
+npm --workspace extension run build
+mvn -f backend/pom.xml test
+mvn -f backend/pom.xml package
+```
+
+Root helpers:
 
 ```bash
 npm run build
@@ -181,76 +269,36 @@ npm run typecheck
 npm test
 ```
 
-Extension-only tests:
+## Current Limitations
 
-```bash
-npm --workspace extension run test
-```
+- Prototype quality deployment, not production hardening.
+- No Chrome Web Store packaging yet.
+- No user accounts or cross-device personal sync.
+- Firestore stores shared manifests only.
+- Gemini availability depends on the user’s Google project/API access.
+- Docker and Cloud Run require the user’s own local/GCP credentials.
 
-Backend-only tests:
+## Secret Safety
 
-```bash
-npm --prefix backend test
-```
-
-Backend API smoke test:
-
-```bash
-curl -s http://127.0.0.1:8080/api/v1/health
-```
-
-Analyze a video:
-
-```bash
-curl -s -X POST http://127.0.0.1:8080/api/v1/videos/analyze \
-  -H 'Content-Type: application/json' \
-  -d '{"youtubeUrl":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","title":"Kubernetes Tutorial"}'
-```
-
-## How The Policy Works
-
-The extension does not call Gemini for every timestamp.
-
-The backend creates or loads a Context Manifest once per video. The extension then:
-
-1. finds the current segment from playback time
-2. checks the primary concept and prerequisites against local profile memory
-3. computes a deterministic gap score
-4. shows context only if the policy says `SHOW`
-5. stays quiet if the learner likely already has enough context
-
-Policy scoring:
-
-```text
-Knowledge: UNKNOWN=3, LEARNING=2, FAMILIAR=1, COMFORTABLE=0
-Importance: CORE=3, HIGH=2, MEDIUM=1, LOW=0
-Prerequisite gap: UNKNOWN=+2, LEARNING=+1
-LEARNING threshold: 4
-CONTEXTUAL threshold: 6
-PASSIVE mode: always silent
-```
-
-## Open Source Notes
-
-This repo is designed so contributors can clone and run it with their own credentials.
-
-Commit:
+Committed:
 
 - source code
 - docs
-- screenshots
 - `.env.example`
-- `package-lock.json`
+- tests
 
-Do not commit:
+Never commit:
 
 - `.env`
-- Firebase service account JSON
-- `node_modules`
+- Gemini keys
+- service-account JSON
+- Firebase Admin SDK JSON
 - `extension/dist`
 - `backend/target`
-- IDE workspace files
+- `node_modules`
 
 ## License
+
+Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md). Security and credential handling: see [SECURITY.md](SECURITY.md).
 
 MIT

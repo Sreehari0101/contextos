@@ -8,6 +8,16 @@ web/dist/
 backend/target/
 
 # Environment and secrets
+.env.*
+**/.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+application_default_credentials.json
+*service-account*.json
+secrets/
 .env
 **/.env
 .env.local

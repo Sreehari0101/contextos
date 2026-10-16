@@ -129,6 +129,7 @@ public class GeminiVideoAnalyzer implements VideoAnalyzer {
         - Use approximate timestamps in seconds.
         - Extract meaningful concepts only, not generic words like Video, Person, Speaking, Comedy, YouTube.
         - Include prerequisites only when genuinely useful.
+        - Include up to 3 aliases per concept only when they are genuine synonyms or acronyms for the same concept.
         - Keep segment count under 18.
         %s
         """.formatted(youtubeUrl, title == null ? "" : title, retryInstruction);
@@ -151,7 +152,13 @@ public class GeminiVideoAnalyzer implements VideoAnalyzer {
                 .map(concept -> new Concept(
                     concept.name(),
                     firstNonBlank(concept.canonicalName(), concept.name()),
-                    concept.description()
+                    concept.description(),
+                    safeList(concept.aliases()).stream()
+                        .filter(alias -> alias != null && !alias.isBlank())
+                        .map(String::trim)
+                        .distinct()
+                        .limit(3)
+                        .toList()
                 ))
                 .toList(),
             safeList(segment.prerequisites()),
@@ -199,9 +206,10 @@ public class GeminiVideoAnalyzer implements VideoAnalyzer {
         .properties(Map.of(
             "name", Schema.builder().type(Type.Known.STRING).build(),
             "canonicalName", Schema.builder().type(Type.Known.STRING).build(),
-            "description", Schema.builder().type(Type.Known.STRING).build()
+            "description", Schema.builder().type(Type.Known.STRING).build(),
+            "aliases", stringArray
         ))
-        .required("name", "canonicalName", "description")
+        .required("name", "canonicalName", "description", "aliases")
         .build();
 
     Schema segment = Schema.builder()
@@ -352,6 +360,7 @@ public class GeminiVideoAnalyzer implements VideoAnalyzer {
   private record GeminiConcept(
       String name,
       String canonicalName,
-      String description
+      String description,
+      List<String> aliases
   ) {}
 }

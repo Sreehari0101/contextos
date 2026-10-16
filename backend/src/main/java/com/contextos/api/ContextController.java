@@ -1,12 +1,18 @@
 package com.contextos.api;
 
+import com.contextos.bridge.BridgeGenerationService;
+import com.contextos.bridge.BridgeRequest;
+import com.contextos.bridge.BridgeResponse;
 import com.contextos.context.ContextDecision;
 import com.contextos.context.ContextReason;
 import com.contextos.context.ContextPolicyEngine;
 import com.contextos.manifest.ContextManifest;
 import com.contextos.video.ProcessingStatus;
 import com.contextos.video.VideoService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,10 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class ContextController {
   private final VideoService videoService;
   private final ContextPolicyEngine policyEngine;
+  private final BridgeGenerationService bridgeGenerationService;
 
-  public ContextController(VideoService videoService, ContextPolicyEngine policyEngine) {
+  public ContextController(
+      VideoService videoService,
+      ContextPolicyEngine policyEngine,
+      BridgeGenerationService bridgeGenerationService
+  ) {
     this.videoService = videoService;
     this.policyEngine = policyEngine;
+    this.bridgeGenerationService = bridgeGenerationService;
   }
 
   @GetMapping("/current")
@@ -27,6 +39,11 @@ public class ContextController {
     return videoService.manifestForCurrentContext(videoId)
         .map(manifest -> decideFromManifest(manifest, timestamp))
         .orElseGet(() -> policyEngine.unavailable(videoId, timestamp, ProcessingStatus.ANALYZING, ContextReason.ANALYSIS_NOT_READY));
+  }
+
+  @PostMapping("/bridge")
+  public BridgeResponse bridge(@Valid @RequestBody BridgeRequest request) {
+    return bridgeGenerationService.generate(request);
   }
 
   private ContextDecision decideFromManifest(ContextManifest manifest, int timestamp) {

@@ -105,6 +105,37 @@ class VideoServiceTests {
     assertThat(manifest.segments()).isEmpty();
   }
 
+  @Test
+  void failedManifestDoesNotBlockRetry() {
+    AtomicInteger calls = new AtomicInteger();
+    VideoAnalyzer analyzer = (videoId, youtubeUrl, title) -> {
+      if (calls.incrementAndGet() == 1) {
+        return new VideoAnalysis(
+            videoId,
+            youtubeUrl,
+            title,
+            ContentMode.CONTEXTUAL,
+            ContextValue.NONE,
+            "",
+            ProcessingStatus.FAILED,
+            Instant.now(),
+            "test",
+            List.of()
+        );
+      }
+      return learningAnalysis(videoId, youtubeUrl, title);
+    };
+    VideoService service = new VideoService(new InMemoryContextManifestRepository(), analyzer, new VideoIdExtractor(), new VideoAnalysisValidator());
+    AnalyzeVideoRequest request = new AnalyzeVideoRequest("https://www.youtube.com/watch?v=retry1", "Retry");
+
+    ContextManifest first = service.analyze(request);
+    ContextManifest second = service.analyze(request);
+
+    assertThat(first.status()).isEqualTo(ProcessingStatus.FAILED);
+    assertThat(second.status()).isEqualTo(ProcessingStatus.READY);
+    assertThat(calls).hasValue(2);
+  }
+
   private VideoAnalysis learningAnalysis(String videoId, String youtubeUrl, String title) {
     return new VideoAnalysis(
         videoId,
